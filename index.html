@@ -2077,24 +2077,39 @@ function jsonpRequest(url) {
 }
 
 async function fetchStockList() {
-  // 方案1: 使用新浪财经API获取A股列表（支持CORS）
-  // 新浪财经沪深A股涨幅榜: https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData?page=1&num=5000&sort=changepercent&asc=0&node=hs_a&symbol=&_s_r_a=page
-  // 腾讯财经实时行情API（支持CORS）
+  // 使用新浪财经API获取A股列表（支持CORS）
+  console.log('[DEBUG] 开始获取股票数据...');
   
   try {
-    // 使用新浪财经API获取A股列表
     const sinaUrl = 'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData?page=1&num=500&sort=changepercent&asc=0&node=hs_a&symbol=&_s_r_a=page';
     
+    console.log('[DEBUG] 请求URL:', sinaUrl);
+    const resp = await fetchWithTimeout(sinaUrl, 15000);
+    console.log('[DEBUG] 响应状态:', resp.status);
+    
+    const text = await resp.text();
+    console.log('[DEBUG] 响应长度:', text.length);
+    
+    // 尝试解析JSON
+    let data;
     try {
-      const resp = await fetchWithTimeout(sinaUrl, 10000);
-      const data = await resp.json();
-      
-      if (!Array.isArray(data) || data.length === 0) {
-        throw new Error('新浪API返回数据为空');
-      }
-      
-      // 转换数据格式
-      return data.map(item => ({
+      data = JSON.parse(text);
+    } catch (jsonErr) {
+      console.error('[DEBUG] JSON解析失败:', jsonErr.message);
+      console.log('[DEBUG] 响应前100字符:', text.substring(0, 100));
+      throw new Error('JSON解析失败: ' + jsonErr.message);
+    }
+    
+    console.log('[DEBUG] 解析成功，股票数量:', data ? data.length : 0);
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error('新浪API返回数据为空');
+    }
+    
+    // 转换数据格式，过滤掉北交所股票(bj开头)
+    const stocks = data
+      .filter(item => !item.symbol || !item.symbol.startsWith('bj'))
+      .map(item => ({
         f12: item.code,           // 股票代码
         f14: item.name,           // 股票名称
         f3: parseFloat(item.changepercent) * 100,  // 涨幅
@@ -2103,22 +2118,23 @@ async function fetchStockList() {
         f16: parseFloat(item.low),      // 最低
         f17: parseFloat(item.open),     // 开盘
         f18: parseFloat(item.settlement), // 昨收
-        f5: parseInt(item.volume),      // 成交量
-        f6: parseFloat(item.amount),    // 成交额
-        f8: parseFloat(item.turnoverratio), // 换手率
+        f5: parseInt(item.volume) || 0, // 成交量
+        f6: parseFloat(item.amount) || 0, // 成交额
+        f8: parseFloat(item.turnoverratio) || 0, // 换手率
         f20: parseFloat(item.mktcap) * 100000000,  // 总市值(亿)
-        f21: parseFloat(item.mktcap) * 100000000,  // 流通市值(简化处理)
-        f7: 0,  // 量比
-        secid: (item.code.startsWith('6') ? 'SH' : 'SZ') + item.code
+        f21: parseFloat(item.nmc) * 100000000,  // 流通市值
+        f7: 0,  // 量比(新浪无此字段)
+        secid: (item.code.startsWith('6') ? '1.' : '0.') + item.code
       }));
-    } catch (sinaErr) {
-      console.warn('新浪API失败:', sinaErr.message);
-      
-      // 方案2: 使用演示数据
-      throw { isCors: true, original: sinaErr };
+    
+    console.log('[DEBUG] 转换后股票数量:', stocks.length);
+    if (stocks.length > 0) {
+      console.log('[DEBUG] 第一只股票:', stocks[0]);
     }
+    
+    return stocks;
   } catch (err) {
-    console.error('获取股票数据失败:', err);
+    console.error('[DEBUG] 获取失败:', err);
     throw { isCors: true, original: err };
   }
 }
@@ -3724,3 +3740,100 @@ renderResults = function() {
   updateSellButtons();
 };
 
+// =====================================================
+// 实时价格更新（每30秒刷新持仓价格）
+// =====================================================
+let priceUpdateTimer = null;
+
+async function refreshPositionPrices() {
+  if (sim.positions.length === 0) return;
+  
+  console.log('[价格刷新] 更新持仓...');
+  
+  try {
+    // 使用腾讯API获取实时价格（支持CORS）
+    const codes = sim.positions.map(p => 
+      (p.code.startsWith('6') ? 'sh' : 'sz') + p.code
+    ).join(',');
+    
+    const url = 'https://qt.gtimg.cn/q=' + codes;
+    const resp = await fetchWithTimeout(url, 8000);
+    const text = await resp.text();
+    
+    // 解析返回数据: v_sh600519="1~贵州茅台~600519~1800.00~..."
+    const lines = text.split('\n');
+    let updated = 0;
+    
+    lines.forEach(line => {
+      if (!line.includes('~')) return;
+      const match = line.match(/v_(\w+)=\"(.+)\"/);
+      if (!match) return;
+      
+      const parts = match[2].split('~');
+      if (parts.length < 35) return;
+      
+      const code = parts[2];
+      const price = parseFloat(parts[3]); // 当前价
+      if (!price || price <= 0) return;
+      
+      const pos = sim.positions.find(p => p.code === code);
+      if (pos && pos.currentPrice !== price) {
+        const oldPrice = pos.currentPrice || pos.avgCost;
+        pos.currentPrice = price;
+        updated++;
+        
+        const change = ((price - oldPrice) / oldPrice * 100).toFixed(2);
+        console.log(`[价格刷新] ${pos.name}(${code}): ¥${price} (${change >= 0 ? '+' : ''}${change}%)`);
+      }
+    });
+    
+    if (updated > 0) {
+      saveSimState();
+      updateSimUI();
+      console.log(`[价格刷新] 更新了 ${updated} 只持仓`);
+    }
+  } catch (err) {
+    console.warn('[价格刷新] 失败:', err.message);
+  }
+}
+
+function startPriceUpdate() {
+  if (priceUpdateTimer) return;
+  
+  // 立即刷新一次
+  refreshPositionPrices();
+  
+  // 每30秒刷新一次
+  priceUpdateTimer = setInterval(refreshPositionPrices, 30000);
+  console.log('[价格刷新] 已启动定时更新');
+}
+
+function stopPriceUpdate() {
+  if (priceUpdateTimer) {
+    clearInterval(priceUpdateTimer);
+    priceUpdateTimer = null;
+    console.log('[价格刷新] 已停止定时更新');
+  }
+}
+
+// 页面加载后自动启动
+if (sim.positions.length > 0) {
+  startPriceUpdate();
+}
+
+// 监听持仓变化，自动启停
+const _origSaveSimState = saveSimState;
+saveSimState = function() {
+  const hadPositions = sim.positions.length > 0;
+  _origSaveSimState();
+  const hasPositions = sim.positions.length > 0;
+  
+  if (!hadPositions && hasPositions) {
+    startPriceUpdate();
+  } else if (hadPositions && !hasPositions) {
+    stopPriceUpdate();
+  }
+};
+</script>
+</body>
+</html>
