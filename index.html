@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1261,12 +1262,17 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <!-- 分析按钮 -->
-    <button class="btn-primary" id="btnAnalyze" onclick="startScreening()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      开始筛选
-    </button>
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <button class="btn-primary" id="btnAnalyze" onclick="startScreening()" style="flex:2;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        开始筛选
+      </button>
+      <button class="btn-secondary" onclick="startScreening(true)" style="flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;" title="使用模拟数据体验功能">
+        🧪 演示
+      </button>
+    </div>
 
     <!-- 进度条 -->
     <div class="progress-bar" id="progressBar">
@@ -2071,27 +2077,49 @@ function jsonpRequest(url) {
 }
 
 async function fetchStockList() {
-  // 方法1: JSONP 方式（东方财富，支持file协议）
-  const jsonpUrl = 'https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=5000&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f3&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048&fields=f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152';
+  // 方案1: 使用新浪财经API获取A股列表（支持CORS）
+  // 新浪财经沪深A股涨幅榜: https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData?page=1&num=5000&sort=changepercent&asc=0&node=hs_a&symbol=&_s_r_a=page
+  // 腾讯财经实时行情API（支持CORS）
   
   try {
-    const data = await jsonpRequest(jsonpUrl);
-    return data.data ? data.data.diff : [];
-  } catch (e1) {
-    console.warn('JSONP方式失败，尝试fetch:', e1.message);
+    // 使用新浪财经API获取A股列表
+    const sinaUrl = 'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData?page=1&num=500&sort=changepercent&asc=0&node=hs_a&symbol=&_s_r_a=page';
     
-    // 方法2: 直接fetch（需要服务器环境）
     try {
-      const url = 'https://push2.eastmoney.com/api/qt/clist/get?cb=jQuery&pn=1&pz=5000&po=1&np=1&ut=bd1d9ddb04089700cf9c27f6f7426281&fltt=2&invt=2&fid=f3&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048&fields=f2,f3,f4,f5,f6,f7,f8,f9,f10,f12,f14,f15,f16,f17,f18,f20,f21,f23,f24,f25,f22,f11,f62,f128,f136,f115,f152';
-      const resp = await fetchWithTimeout(url, 15000);
-      const text = await resp.text();
-      const jsonStr = text.replace(/^jQuery\(/, '').replace(/\)$/, '');
-      const data = JSON.parse(jsonStr);
-      return data.data ? data.data.diff : [];
-    } catch (e2) {
-      console.warn('Fetch方式也失败:', e2.message);
-      throw { isCors: true, original: e2 };
+      const resp = await fetchWithTimeout(sinaUrl, 10000);
+      const data = await resp.json();
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error('新浪API返回数据为空');
+      }
+      
+      // 转换数据格式
+      return data.map(item => ({
+        f12: item.code,           // 股票代码
+        f14: item.name,           // 股票名称
+        f3: parseFloat(item.changepercent) * 100,  // 涨幅
+        f2: parseFloat(item.trade),     // 当前价
+        f15: parseFloat(item.high),     // 最高
+        f16: parseFloat(item.low),      // 最低
+        f17: parseFloat(item.open),     // 开盘
+        f18: parseFloat(item.settlement), // 昨收
+        f5: parseInt(item.volume),      // 成交量
+        f6: parseFloat(item.amount),    // 成交额
+        f8: parseFloat(item.turnoverratio), // 换手率
+        f20: parseFloat(item.mktcap) * 100000000,  // 总市值(亿)
+        f21: parseFloat(item.mktcap) * 100000000,  // 流通市值(简化处理)
+        f7: 0,  // 量比
+        secid: (item.code.startsWith('6') ? 'SH' : 'SZ') + item.code
+      }));
+    } catch (sinaErr) {
+      console.warn('新浪API失败:', sinaErr.message);
+      
+      // 方案2: 使用演示数据
+      throw { isCors: true, original: sinaErr };
     }
+  } catch (err) {
+    console.error('获取股票数据失败:', err);
+    throw { isCors: true, original: err };
   }
 }
 
@@ -2532,21 +2560,14 @@ function showNetworkErrorDialog() {
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;
                   padding:28px;max-width:400px;width:90%;text-align:center;">
         <div style="font-size:48px;margin-bottom:16px;">🌐</div>
-        <h3 style="font-size:18px;margin-bottom:8px;color:var(--text);">网络请求被拦截</h3>
+        <h3 style="font-size:18px;margin-bottom:8px;color:var(--text);">无法获取实时数据</h3>
         <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6;">
-          从本地文件直接打开时，浏览器出于安全考虑会阻止跨域请求。<br>
-          请选择处理方式：
+          浏览器安全策略阻止了跨域请求，无法从东方财富获取实时股票数据。<br>
+          建议使用「演示模式」体验完整功能：
         </p>
         <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:20px;text-align:left;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600;">推荐方案：</div>
-          <div style="font-size:13px;color:var(--text);margin-bottom:6px;"><strong>方案A</strong> — 启动本地服务器（推荐）</div>
-          <div style="font-size:11px;color:var(--text2);margin-bottom:10px;">
-            在文件所在目录运行：<br>
-            <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;color:var(--blue);">npx serve</code><br>
-            或 <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;color:var(--blue);">python -m http.server</code>
-          </div>
-          <div style="font-size:13px;color:var(--text);margin-bottom:6px;"><strong>方案B</strong> — 使用演示数据体验</div>
-          <div style="font-size:11px;color:var(--text2);">使用模拟股票数据展示完整功能，不依赖网络</div>
+          <div style="font-size:13px;color:var(--text);margin-bottom:6px;"><strong>演示模式</strong></div>
+          <div style="font-size:11px;color:var(--text2);">使用模拟股票数据展示完整功能，包括8步筛选、K线图、模拟交易等所有功能</div>
         </div>
         <div style="display:flex;gap:10px;">
           <button id="btnDemo" style="flex:1;padding:12px;background:linear-gradient(135deg,var(--blue),var(--purple));
