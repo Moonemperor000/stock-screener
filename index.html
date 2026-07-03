@@ -2415,20 +2415,41 @@ async function startScreening(useDemo = false) {
     await sleep(100);
     
     const qualifiedStocks = [];
-    const loopCount = needKline ? Math.min(stocks.length, 50) : stocks.length;
     
-    for (let i = 0; i < loopCount; i++) {
-      const stock = stocks[i];
-      const secId = isDemoRun ? `0.${stock.f12}` : (stock.f12.startsWith('6') ? `1.${stock.f12}` : `0.${stock.f12}`);
+    // 如果不需要K线筛选，直接将所有股票作为结果
+    if (!needKline) {
+      stocks.forEach(stock => {
+        const matchSteps = [];
+        if (CONFIG.stepEnabled[1]) matchSteps.push(`涨幅${CONFIG.p1.min}-${CONFIG.p1.max}%`);
+        if (CONFIG.stepEnabled[2]) matchSteps.push(`量比>${CONFIG.p2.val}`);
+        if (CONFIG.stepEnabled[3]) matchSteps.push(`换手${CONFIG.p3.min}-${CONFIG.p3.max}%`);
+        if (CONFIG.stepEnabled[4]) matchSteps.push(`市值${CONFIG.p4.min}-${CONFIG.p4.max}亿`);
+        
+        qualifiedStocks.push({
+          f12: stock.f12, f14: stock.f14, f2: stock.f2,
+          f3: stock.f3, f8: stock.f8, f10: stock.f10,
+          f21: stock.f21, f6: stock.f6,
+          matchSteps
+        });
+      });
       
-      let klines;
-      if (isDemoRun) {
-        klines = generateDemoKlines();
-      } else {
-        klines = await fetchKlineData(secId);
-      }
+      console.log('[DEBUG] 不需要K线筛选，直接输出:', qualifiedStocks.length, '只');
+    } else {
+      // 需要K线筛选时，遍历前50只股票获取K线数据
+      const loopCount = Math.min(stocks.length, 50);
       
-      if (klines.length < 30) continue;
+      for (let i = 0; i < loopCount; i++) {
+        const stock = stocks[i];
+        const secId = isDemoRun ? `0.${stock.f12}` : (stock.f12.startsWith('6') ? `1.${stock.f12}` : `0.${stock.f12}`);
+        
+        let klines;
+        if (isDemoRun) {
+          klines = generateDemoKlines();
+        } else {
+          klines = await fetchKlineData(secId);
+        }
+        
+        if (klines.length < 30) continue;
       
       const parsedKlines = klines.map(k => {
         const parts = k.split(',');
@@ -2514,6 +2535,7 @@ async function startScreening(useDemo = false) {
         todayAvg: todayAvg.toFixed(2), matchSteps
       });
     }
+    } // end of else (needKline)
     
     // 统一标记k线步骤完成
     if (CONFIG.stepEnabled[5]) updateStep(5, 'done');
