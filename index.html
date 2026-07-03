@@ -1737,16 +1737,16 @@ const CONFIG = {
     { name: '尾盘信号', en: 'ENTRY' }
   ],
   // 每步参数
-  p1: { min: 3, max: 5 },
+  p1: { min: 1, max: 10 },
   p2: { val: 1 },
-  p3: { min: 5, max: 10 },
-  p4: { min: 50, max: 200 },
+  p3: { min: 1, max: 20 },
+  p4: { min: 20, max: 500 },
   p5: { days: 10, mult: 1.1 },
   p6: { type: 'ma5>ma10>ma20' },
   p7: { enabled: false, compare: 'above' },
   p8: { pos: 'above', reclaim: 0.99 },
   // 每步开关
-  stepEnabled: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: false, 8: true }
+  stepEnabled: { 1: true, 2: false, 3: true, 4: true, 5: false, 6: false, 7: false, 8: false }
 };
 
 // ============ 状态 ============
@@ -2081,58 +2081,63 @@ async function fetchStockList() {
   console.log('[DEBUG] 开始获取股票数据...');
   
   try {
-    const sinaUrl = 'https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData?page=1&num=500&sort=changepercent&asc=0&node=hs_a&symbol=&_s_r_a=page';
+    // 获取多页数据，覆盖涨幅范围
+    const allStocks = [];
+    const pages = [1, 2, 3, 4, 5, 6, 7, 8];
     
-    console.log('[DEBUG] 请求URL:', sinaUrl);
-    const resp = await fetchWithTimeout(sinaUrl, 15000);
-    console.log('[DEBUG] 响应状态:', resp.status);
-    
-    const text = await resp.text();
-    console.log('[DEBUG] 响应长度:', text.length);
-    
-    // 尝试解析JSON
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (jsonErr) {
-      console.error('[DEBUG] JSON解析失败:', jsonErr.message);
-      console.log('[DEBUG] 响应前100字符:', text.substring(0, 100));
-      throw new Error('JSON解析失败: ' + jsonErr.message);
+    for (const page of pages) {
+      const sinaUrl = `https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData?page=${page}&num=500&sort=changepercent&asc=0&node=hs_a&symbol=&_s_r_a=page`;
+      
+      console.log(`[DEBUG] 获取第${page}页...`);
+      
+      try {
+        const resp = await fetchWithTimeout(sinaUrl, 10000);
+        const text = await resp.text();
+        
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (jsonErr) {
+          console.warn(`[DEBUG] 第${page}页JSON解析失败`);
+          continue;
+        }
+        
+        if (!Array.isArray(data) || data.length === 0) continue;
+        
+        const stocks = data
+          .filter(item => !item.symbol || !item.symbol.startsWith('bj'))
+          .map(item => ({
+            f12: item.code,
+            f14: item.name,
+            f3: parseFloat(item.changepercent) * 100,
+            f2: parseFloat(item.trade),
+            f15: parseFloat(item.high),
+            f16: parseFloat(item.low),
+            f17: parseFloat(item.open),
+            f18: parseFloat(item.settlement),
+            f5: parseInt(item.volume) || 0,
+            f6: parseFloat(item.amount) || 0,
+            f8: parseFloat(item.turnoverratio) || 0,
+            f20: parseFloat(item.mktcap) * 10000,
+            f21: parseFloat(item.nmc || item.mktcap) * 10000,
+            f7: 0,
+            secid: (item.code.startsWith('6') ? '1.' : '0.') + item.code
+          }));
+        
+        allStocks.push(...stocks);
+        console.log(`[DEBUG] 第${page}页${stocks.length}只，累计${allStocks.length}只`);
+      } catch (pageErr) {
+        console.warn(`[DEBUG] 第${page}页失败:`, pageErr.message);
+      }
     }
     
-    console.log('[DEBUG] 解析成功，股票数量:', data ? data.length : 0);
+    console.log('[DEBUG] 总股票数:', allStocks.length);
     
-    if (!Array.isArray(data) || data.length === 0) {
-      throw new Error('新浪API返回数据为空');
+    if (allStocks.length === 0) {
+      throw new Error('所有页面数据获取失败');
     }
     
-    // 转换数据格式，过滤掉北交所股票(bj开头)
-    const stocks = data
-      .filter(item => !item.symbol || !item.symbol.startsWith('bj'))
-      .map(item => ({
-        f12: item.code,           // 股票代码
-        f14: item.name,           // 股票名称
-        f3: parseFloat(item.changepercent) * 100,  // 涨幅
-        f2: parseFloat(item.trade),     // 当前价
-        f15: parseFloat(item.high),     // 最高
-        f16: parseFloat(item.low),      // 最低
-        f17: parseFloat(item.open),     // 开盘
-        f18: parseFloat(item.settlement), // 昨收
-        f5: parseInt(item.volume) || 0, // 成交量
-        f6: parseFloat(item.amount) || 0, // 成交额
-        f8: parseFloat(item.turnoverratio) || 0, // 换手率
-        f20: parseFloat(item.mktcap) * 100000000,  // 总市值(亿)
-        f21: parseFloat(item.nmc) * 100000000,  // 流通市值
-        f7: 0,  // 量比(新浪无此字段)
-        secid: (item.code.startsWith('6') ? '1.' : '0.') + item.code
-      }));
-    
-    console.log('[DEBUG] 转换后股票数量:', stocks.length);
-    if (stocks.length > 0) {
-      console.log('[DEBUG] 第一只股票:', stocks[0]);
-    }
-    
-    return stocks;
+    return allStocks;
   } catch (err) {
     console.error('[DEBUG] 获取失败:', err);
     throw { isCors: true, original: err };
@@ -2392,8 +2397,9 @@ async function startScreening(useDemo = false) {
     await sleep(100);
     if (CONFIG.stepEnabled[4]) {
       stocks = stocks.filter(s => {
-        const capY = (s.f21 || 0) / 10000;
-        return capY >= CONFIG.p4.min && capY <= CONFIG.p4.max;
+        // f21单位是元，CONFIG.p4单位是亿元
+        const capYi = (s.f21 || 0) / 100000000; // 元转亿元
+        return capYi >= CONFIG.p4.min && capYi <= CONFIG.p4.max;
       });
     }
     updateStep(4, CONFIG.stepEnabled[4] ? 'done' : 'skip');
@@ -2409,7 +2415,7 @@ async function startScreening(useDemo = false) {
     await sleep(100);
     
     const qualifiedStocks = [];
-    const loopCount = Math.min(stocks.length, needKline ? 50 : 0);
+    const loopCount = needKline ? Math.min(stocks.length, 50) : stocks.length;
     
     for (let i = 0; i < loopCount; i++) {
       const stock = stocks[i];
