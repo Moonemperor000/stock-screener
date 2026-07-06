@@ -122,7 +122,7 @@
     /* Main Layout */
     .main {
       display: grid;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: 240px 1fr;
       gap: 0;
       min-height: calc(100vh - 100px);
     }
@@ -407,11 +407,13 @@
     }
 
     /* Content Area */
-    .content {
-      padding: 20px;
+        .content {
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
+      flex: 1;
+      overflow: hidden;
     }
 
     /* Progress Steps */
@@ -515,10 +517,20 @@
       border-radius: 10px;
       font-weight: normal;
     }
+    .tag-date {
+      font-size: 11px;
+      background: var(--surface2);
+      color: var(--text2);
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 4px;
+    }
     .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 16px;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
     .stock-card-actions {
       display: flex;
@@ -1205,6 +1217,233 @@
     }
     .copy-feedback.show { opacity: 1; }
 
+    /* Results Table */
+    .results-table-container {
+      flex: 1;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: auto;
+    }
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .results-table thead {
+      background: var(--surface2);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .results-table th {
+      padding: 8px 10px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text2);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      font-size: 12px;
+    }
+    .results-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .results-table tbody tr:hover {
+      background: var(--surface2);
+    }
+    .stock-row {
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .stock-row .code {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--blue);
+    }
+    .stock-row .name {
+      font-weight: 600;
+    }
+    .change-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .change-badge.up {
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--green);
+    }
+    .change-badge.down {
+      background: rgba(248, 81, 73, 0.15);
+      color: var(--red);
+    }
+    .match-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .mini-tag {
+      display: inline-block;
+      padding: 2px 6px;
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--blue);
+      border-radius: 3px;
+      font-size: 11px;
+    }
+    .mini-tag + .more {
+      color: var(--text3);
+      font-size: 11px;
+    }
+    .btn-detail, .btn-buy-sm, .btn-sell-sm {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-right: 4px;
+    }
+    .btn-detail {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-buy-sm {
+      background: rgba(63, 185, 80, 0.15);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+      color: var(--green);
+    }
+    .btn-sell-sm {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      color: var(--red);
+    }
+    .btn-detail:hover { background: var(--border); }
+    .btn-buy-sm:hover { background: rgba(63, 185, 80, 0.25); }
+    .btn-sell-sm:hover { background: rgba(248, 81, 73, 0.25); }
+    
+    /* Detail Row */
+    .detail-row {
+      display: none;
+      background: var(--bg);
+    }
+    .detail-row.show {
+      display: table-row;
+    }
+    .stock-detail {
+      padding: 12px;
+    }
+    .detail-warning {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: rgba(210, 153, 34, 0.1);
+      border: 1px solid rgba(210, 153, 34, 0.3);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--yellow);
+    }
+    .warning-icon {
+      font-size: 14px;
+    }
+    .detail-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 700px) {
+      .detail-content { grid-template-columns: 1fr; }
+    }
+    .detail-left, .detail-right {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .detail-section {
+      background: var(--surface);
+      border-radius: 6px;
+      padding: 10px;
+    }
+    .section-title {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+    }
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 6px;
+      background: var(--bg);
+      border-radius: 3px;
+    }
+    .info-item .label {
+      color: var(--text2);
+      font-size: 11px;
+    }
+    .info-item .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .match-steps-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .match-step {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(63, 185, 80, 0.1);
+      border: 1px solid rgba(63, 185, 80, 0.2);
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--green);
+    }
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .btn-buy, .btn-sell {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .btn-buy {
+      background: var(--green);
+      border: none;
+      color: white;
+    }
+    .btn-sell {
+      background: var(--surface);
+      border: 1px solid var(--red);
+      color: var(--red);
+    }
+    .btn-buy:hover { background: #2ea043; }
+    .btn-sell:hover { background: rgba(248, 81, 73, 0.1); }
+    .kline-chart {
+      height: 160px;
+      background: var(--surface);
+      border-radius: 6px;
+      margin-top: 12px;
+    }
+
     /* Responsive */
     @media (max-width: 900px) {
       .main { grid-template-columns: 1fr; }
@@ -1519,7 +1758,7 @@
 
     <!-- 结果标题 -->
     <div class="results-header" id="resultsHeader" style="display:none;">
-      <h2>筛选结果 <span class="tag" id="resultCount">0只</span></h2>
+      <h2>筛选结果 <span class="tag" id="resultCount">0只</span> <span class="tag-date" id="screenerDate"></span></h2>
       <div style="display:flex;gap:8px;">
         <button class="btn-secondary" onclick="showSimPanel()" title="模拟交易">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1761,7 +2000,8 @@ let state = {
   detailChart: null,
   timerCheckInterval: null,
   currentTab: 'daily',
-  isDemo: false
+  isDemo: false,
+  screenerDate: ''
 };
 
 // ============ 初始化 ============
@@ -2229,14 +2469,19 @@ function generateDemoStockList() {
     }
     
     result.push({
-      f2: Math.round(price * 100),
-      f3: Math.round(change * 100),
+      f2: price,  // 实际价格（元）
+      f3: Math.round(change * 100),  // 涨幅（放大100倍）
       f8: turnover,
       f10: volRatio,
       f12: code,
       f14: name,
       f21: marketCap * 10000 * 10000,
       f6: Math.floor(Math.random() * 5 + 2) * 100000000,
+      f15: price * (1 + Math.random() * 0.02),  // 最高价
+      f16: price * (1 - Math.random() * 0.02),  // 最低价
+      f17: price * (1 + (Math.random() - 0.5) * 0.02),  // 开盘价
+      f18: price / (1 + change / 100),  // 昨收
+      f5: Math.floor(Math.random() * 500000 + 100000),  // 成交量
       _demo: true
     });
   }
@@ -2440,7 +2685,7 @@ async function startScreening(useDemo = false) {
       
       for (let i = 0; i < loopCount; i++) {
         const stock = stocks[i];
-        const secId = isDemoRun ? `0.${stock.f12}` : (stock.f12.startsWith('6') ? `1.${stock.f12}` : `0.${stock.f12}`);
+        const secId = state.isDemo ? `0.${stock.f12}` : (stock.f12.startsWith('6') ? `1.${stock.f12}` : `0.${stock.f12}`);
         
         let klines;
         if (isDemoRun) {
@@ -2546,6 +2791,12 @@ async function startScreening(useDemo = false) {
     // 更新统计
     document.getElementById('resultsStats').style.display = 'flex';
     document.getElementById('statFinal').textContent = qualifiedStocks.length + (isDemoRun ? ' (演示)' : '');
+    
+    // 更新筛选日期
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    document.getElementById('screenerDate').textContent = dateStr;
+    state.screenerDate = dateStr;
     
     // 渲染结果
     state.results = qualifiedStocks;
@@ -2682,73 +2933,255 @@ function checkVolumeStep(klines) {
 // ============ 渲染 ============
 function renderResults() {
   const grid = document.getElementById('resultsGrid');
-  const header = document.getElementById('resultsHeader');
-  const empty = document.getElementById('emptyState');
-  
+  const header = document.getElementById('resultsHeader');  
   header.style.display = 'flex';
   document.getElementById('resultCount').textContent = `${state.results.length}只`;
   
   if (state.results.length === 0) {
-    empty.style.display = 'block';
-    grid.innerHTML = '';
-    grid.appendChild(empty);
+    grid.innerHTML = `
+      <div class="empty-state" style="display:block;text-align:center;padding:60px 20px;">
+        <div style="font-size:48px;margin-bottom:16px;">📊</div>
+        <div style="font-size:16px;color:var(--text2);">暂无符合条件的股票</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:8px;">请尝试放宽筛选条件</div>
+      </div>
+    `;
     return;
   }
   
-  grid.innerHTML = state.results.map((stock, i) => `
-    <div class="stock-card" onclick="selectStock(${i})" style="animation-delay: ${i * 50}ms">
-      <div class="stock-header">
-        <div>
-          <div class="stock-name">${stock.f14}</div>
-          <div class="stock-code" onclick="event.stopPropagation(); copyCode('${stock.f12}')">
-            ${stock.f12} <span class="copy-feedback" id="copy${stock.f12}">已复制</span>
-          </div>
-        </div>
-        <div class="stock-price">
-          <div class="price" style="color: ${stock.f3 >= 0 ? 'var(--green)' : 'var(--red)'}">${(stock.f2 / 100).toFixed(2)}</div>
-          <div class="change" style="color: ${stock.f3 >= 0 ? 'var(--green)' : 'var(--red)'}">
-            ${stock.f3 >= 0 ? '+' : ''}${(stock.f3 / 100).toFixed(2)}%
-          </div>
-        </div>
-      </div>
-      <div class="stock-metrics">
-        <div class="metric">
-          <div class="metric-label">量比</div>
-          <div class="metric-value">${(stock.f10 || 0).toFixed(2)}</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">换手率</div>
-          <div class="metric-value">${(stock.f8 || 0).toFixed(2)}%</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">流通市值</div>
-          <div class="metric-value">${((stock.f21 || 0) / 10000).toFixed(0)}亿</div>
-        </div>
-        <div class="metric">
-          <div class="metric-label">均价格式</div>
-          <div class="metric-value">¥${stock.todayAvg}</div>
-        </div>
-      </div>
-      <div class="stock-tags">
-        ${stock.matchSteps.map(s => `<span class="tag-pill">${s}</span>`).join('')}
-      </div>
-      <div class="stock-card-actions">
-        <button class="btn-buy" onclick="event.stopPropagation(); openTradeModal('${stock.f12}', '${stock.f14}', 'buy')">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-          买入
-        </button>
-        <button class="btn-sell" onclick="event.stopPropagation(); openTradeModal('${stock.f12}', '${stock.f14}', 'sell')" id="sellbtn${stock.f12}">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/></svg>
-          卖出
-        </button>
-      </div>
-      <div class="sparkline" id="sparkline${stock.f12}"></div>
+  // 表格形式展示
+  grid.innerHTML = `
+    <div class="results-table-container">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>股票代码</th>
+            <th>股票名称</th>
+            <th>现价</th>
+            <th>涨幅</th>
+            <th>换手率</th>
+            <th>流通市值</th>
+            <th>符合条件</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${state.results.map((stock, i) => `
+            <tr class="stock-row" onclick="toggleStockDetail(${i})">
+              <td>${i + 1}</td>
+              <td class="code">${stock.f12}</td>
+              <td class="name">${stock.f14}</td>
+              <td class="price" style="color: ${stock.f3 >= 0 ? 'var(--green)' : 'var(--red)'}">${(stock.f2 || 0).toFixed(2)}</td>
+              <td style="color: ${stock.f3 >= 0 ? 'var(--green)' : 'var(--red)'}">
+                <span class="change-badge ${stock.f3 >= 0 ? 'up' : 'down'}">
+                  ${stock.f3 >= 0 ? '+' : ''}${(stock.f3 / 100).toFixed(2)}%
+                </span>
+              </td>
+              <td>${(stock.f8 || 0).toFixed(2)}%</td>
+              <td>${((stock.f21 || 0) / 100000000).toFixed(2)}亿</td>
+              <td>
+                <div class="match-tags">
+                  ${(stock.matchSteps || []).slice(0, 3).map(s => `<span class="mini-tag">${s}</span>`).join('')}
+                  ${(stock.matchSteps || []).length > 3 ? `<span class="more">+${stock.matchSteps.length - 3}</span>` : ''}
+                </div>
+              </td>
+              <td onclick="event.stopPropagation()">
+                <button class="btn-detail" onclick="toggleStockDetail(${i})">详情</button>
+                <button class="btn-buy-sm" onclick="openTradeModal('${stock.f12}', '${stock.f14}', 'buy')">买入</button>
+                <button class="btn-sell-sm" onclick="openTradeModal('${stock.f12}', '${stock.f14}', 'sell')">卖出</button>
+              </td>
+            </tr>
+            <tr class="detail-row" id="detail-${i}">
+              <td colspan="9">
+                <div class="stock-detail">
+                  <div class="detail-warning">
+                    <span class="warning-icon">⚠️</span>
+                    <span>仅供模拟交易，不构成投资建议。股市有风险，投资需谨慎！</span>
+                  </div>
+                  <div class="detail-content">
+                    <div class="detail-left">
+                      <div class="detail-section">
+                        <div class="section-title">基本信息</div>
+                        <div class="info-grid">
+                          <div class="info-item"><span class="label">开盘价</span><span class="value">${(stock.f17 || 0).toFixed(2)}</span></div>
+                          <div class="info-item"><span class="label">最高价</span><span class="value" style="color:var(--green)">${(stock.f15 || 0).toFixed(2)}</span></div>
+                          <div class="info-item"><span class="label">最低价</span><span class="value" style="color:var(--red)">${(stock.f16 || 0).toFixed(2)}</span></div>
+                          <div class="info-item"><span class="label">昨收</span><span class="value">${(stock.f18 || 0).toFixed(2)}</span></div>
+                          <div class="info-item"><span class="label">成交量</span><span class="value">${((stock.f5 || 0) / 10000).toFixed(0)}万手</span></div>
+                          <div class="info-item"><span class="label">成交额</span><span class="value">${((stock.f6 || 0) / 100000000).toFixed(2)}亿</span></div>
+                        </div>
+                      </div>
+                      ${stock.klines ? `
+                      <div class="detail-section">
+                        <div class="section-title">均线数据</div>
+                        <div class="info-grid">
+                          <div class="info-item"><span class="label">MA5</span><span class="value">${stock.ma5 || '-'}</span></div>
+                          <div class="info-item"><span class="label">MA10</span><span class="value">${stock.ma10 || '-'}</span></div>
+                          <div class="info-item"><span class="label">MA20</span><span class="value">${stock.ma20 || '-'}</span></div>
+                          <div class="info-item"><span class="label">今日均价</span><span class="value">${stock.todayAvg || '-'}</span></div>
+                        </div>
+                      </div>
+                      ` : ''}
+                    </div>
+                    <div class="detail-right">
+                      <div class="detail-section">
+                        <div class="section-title">符合条件</div>
+                        <div class="match-steps-list">
+                          ${(stock.matchSteps || []).map(s => `<span class="match-step">✓ ${s}</span>`).join('')}
+                        </div>
+                      </div>
+                      <div class="detail-actions">
+                        <button class="btn-buy" onclick="openTradeModal('${stock.f12}', '${stock.f14}', 'buy')">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                          买入
+                        </button>
+                        <button class="btn-sell" onclick="openTradeModal('${stock.f12}', '${stock.f14}', 'sell')">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+                          卖出
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  ${stock.klines ? `<div class="kline-chart" id="kline-${i}"></div>` : ''}
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>
-  `).join('');
+  `;
+}
+
+async function toggleStockDetail(index) {
+  const detailRow = document.getElementById(`detail-${index}`);
+  if (!detailRow) return;
   
-  // 渲染迷你走势图
-  state.results.forEach(stock => {
-    renderSparkline(stock);
+  const isShowing = detailRow.classList.contains('show');
+  
+  // 关闭所有其他展开的详情
+  document.querySelectorAll('.detail-row.show').forEach(row => {
+    row.classList.remove('show');
+  });
+  
+  // 切换当前行
+  if (!isShowing) {
+    detailRow.classList.add('show');
+    
+    // 如果有K线数据，渲染图表
+    const stock = state.results[index];
+    if (stock && stock.klines && stock.klines.length > 0) {
+      setTimeout(() => renderKlineChart(index), 100);
+    } else if (stock && !stock.klines) {
+      // K线数据不存在，按需获取
+      const secId = state.isDemo ? `0.${stock.f12}` : (stock.f12.startsWith('6') ? `1.${stock.f12}` : `0.${stock.f12}`);
+      
+      // 显示加载状态
+      const chartContainer = document.getElementById(`kline-${index}`);
+      if (chartContainer) {
+        chartContainer.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2);">正在加载K线数据...</div>';
+      }
+      
+      try {
+        let klines;
+        if (state.isDemo) {
+          klines = generateDemoKlines();
+        } else {
+          klines = await fetchKlineData(secId);
+        }
+        
+        if (klines && klines.length > 0) {
+          const parsedKlines = klines.map(k => {
+            const parts = k.split(',');
+            return {
+              date: parts[0],
+              open: parseFloat(parts[1]),
+              close: parseFloat(parts[2]),
+              high: parseFloat(parts[3]),
+              low: parseFloat(parts[4]),
+              volume: parseFloat(parts[5]),
+              amount: parseFloat(parts[6])
+            };
+          });
+          
+          stock.klines = parsedKlines;
+          stock.ma5 = calcMA(parsedKlines.slice(-5), 'close');
+          stock.ma10 = calcMA(parsedKlines.slice(-10), 'close');
+          stock.ma20 = calcMA(parsedKlines.slice(-20), 'close');
+          const today = parsedKlines[parsedKlines.length - 1];
+          stock.todayAvg = (today.amount / today.volume / 100).toFixed(2);
+          
+          setTimeout(() => renderKlineChart(index), 100);
+        }
+      } catch (e) {
+        console.error('K线获取失败:', e);
+        if (chartContainer) {
+          chartContainer.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red);">K线数据加载失败</div>';
+        }
+      }
+    }
+  }
+}
+
+function renderKlineChart(index) {
+  const container = document.getElementById(`kline-${index}`);
+  if (!container) return;
+  
+  const stock = state.results[index];
+  if (!stock || !stock.klines || stock.klines.length < 5) return;
+  
+  const chart = echarts.init(container);
+  const klines = stock.klines.slice(-60);
+  
+  chart.setOption({
+    title: {
+      text: 'K线走势（近60日）',
+      textStyle: { color: 'var(--text2)', fontSize: 12 },
+      left: 10,
+      top: 5
+    },
+    grid: { top: 40, right: 50, bottom: 30, left: 50 },
+    xAxis: {
+      type: 'category',
+      data: klines.map(k => k.date),
+      axisLine: { lineStyle: { color: 'var(--border)' } },
+      axisLabel: { color: 'var(--text3)', fontSize: 10, rotate: 45 }
+    },
+    yAxis: {
+      type: 'value',
+      scale: true,
+      axisLine: { lineStyle: { color: 'var(--border)' } },
+      axisLabel: { color: 'var(--text3)', fontSize: 10 },
+      splitLine: { lineStyle: { color: 'var(--border)', opacity: 0.3 } }
+    },
+    series: [{
+      type: 'line',
+      data: klines.map(k => k.close),
+      smooth: true,
+      symbol: 'none',
+      lineStyle: { color: stock.f3 >= 0 ? '#3fb950' : '#f85149', width: 2 },
+      areaStyle: {
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: stock.f3 >= 0 ? 'rgba(63,185,80,0.2)' : 'rgba(248,81,73,0.2)' },
+            { offset: 1, color: 'transparent' }
+          ]
+        }
+      }
+    }],
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'var(--surface)',
+      borderColor: 'var(--border)',
+      textStyle: { color: 'var(--text)' },
+      formatter: function(params) {
+        const idx = params[0].dataIndex;
+        const k = klines[idx];
+        return `${k.date}<br/>收盘: ${k.close}<br/>成交量: ${(k.volume / 10000).toFixed(0)}万`;
+      }
+    }
   });
 }
 
@@ -2801,7 +3234,7 @@ async function selectStock(index) {
   
   document.getElementById('detailName').textContent = stock.f14;
   document.getElementById('detailCode').textContent = stock.f12;
-  document.getElementById('detailPrice').textContent = `¥${(stock.f2 / 100).toFixed(2)}`;
+  document.getElementById('detailPrice').textContent = `¥${(stock.f2 || 0).toFixed(2)}`;
   document.getElementById('detailPrice').style.color = stock.f3 >= 0 ? 'var(--green)' : 'var(--red)';
   document.getElementById('detailChange').textContent = `${stock.f3 >= 0 ? '+' : ''}${(stock.f3 / 100).toFixed(2)}%`;
   document.getElementById('detailChange').style.color = stock.f3 >= 0 ? 'var(--green)' : 'var(--red)';
@@ -2889,7 +3322,7 @@ async function renderDetailChart(stock, type) {
       <div style="padding:20px; display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
         <div style="background:var(--surface2);padding:16px;border-radius:8px;">
           <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">现价</div>
-          <div style="font-size:20px;font-family:'JetBrains Mono';color:var(--text);">¥${(stock.f2/100).toFixed(2)}</div>
+          <div style="font-size:20px;font-family:'JetBrains Mono';color:var(--text);">¥${(stock.f2||0).toFixed(2)}</div>
         </div>
         <div style="background:var(--surface2);padding:16px;border-radius:8px;">
           <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">涨跌幅</div>
@@ -2973,7 +3406,7 @@ function saveHistory(results, isDemo = false) {
     results: results.map(s => ({
       code: s.f12,
       name: s.f14,
-      price: (s.f2 / 100).toFixed(2),
+      price: (s.f2 || 0).toFixed(2),
       change: (s.f3 / 100).toFixed(2),
       volRatio: (s.f10 || 0).toFixed(2),
       turnover: (s.f8 || 0).toFixed(2),
@@ -3498,7 +3931,7 @@ function updatePositionsPrice(results) {
   results.forEach(stock => {
     const pos = sim.positions.find(p => p.code === stock.f12);
     if (pos) {
-      pos.currentPrice = stock.f2 / 100;
+      pos.currentPrice = stock.f2;
     }
   });
   saveSimState();
@@ -3519,7 +3952,7 @@ function openTradeModal(code, name, mode) {
   let price = 0;
   const stock = state.results.find(s => s.f12 === code);
   if (stock) {
-    price = stock.f2 / 100;
+    price = stock.f2 || 0;
   } else {
     const pos = sim.positions.find(p => p.code === code);
     if (pos) {
